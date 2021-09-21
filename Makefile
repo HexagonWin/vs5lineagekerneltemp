@@ -373,6 +373,32 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks
+
+$(info "======================LINUX INCLUDE===========================================================")
+$(info $(LINUXINCLUDE))
+$(info "==============================================================================================")
+
+######################################################################
+# PANTECH_ANDROID_FLAGS
+######################################################################
+# Android SKY cust Feature
+# Add START. by sungwook on 2010-05-07
+#----------------------------------------------------------------------
+PANTECH_ANDROID_FLAGS := -DT_EF44S -I$(srctree)/include/pantech \
+                   -include $(srctree)/include/pantech/CUST_PANTECH.h \
+                   -DFIRM_VER=\"S0220215\" \
+                   -DSYS_MODEL_NAME=\"EF44S\" \
+                   -DPANTECH_MODEL_NAME=\"IM-A840S\" \
+                   -DSYS_PROJECT_NAME=\"EF44S\" \
+                   -DFS_USER_DATA_VER=37 \
+                   -DPANTECH_STORAGE_INTERNAL_EMUL \
+                   -DFEATURE_AARM_RELEASE_MOD
+
+KBUILD_CFLAGS   += $(PANTECH_ANDROID_FLAGS) -D__KERNELBUILD__
+#----------------------------------------------------------------------
+$(info "KERNEL ======================================================================================")
+$(info $(KBUILD_CFLAGS))
+$(info "==============================================================================================")
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
@@ -570,9 +596,9 @@ endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
-ifneq ($(CONFIG_FRAME_WARN),0)
-KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
-endif
+#ifneq ($(CONFIG_FRAME_WARN),0)
+#KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
+#endif
 
 # Force gcc to behave correct even for buggy distributions
 ifndef CONFIG_CC_STACKPROTECTOR

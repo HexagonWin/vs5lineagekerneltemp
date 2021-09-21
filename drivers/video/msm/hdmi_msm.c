@@ -4335,7 +4335,7 @@ static int hdmi_msm_power_ctrl(boolean enable)
 			if (rc) {
 				DEV_ERR("%s: HPD ON FAILED\n", __func__);
 				return rc;
-			}
+		}
 
 			/* Wait for HPD initialization to complete */
 			INIT_COMPLETION(hdmi_msm_state->hpd_event_processed);
@@ -4588,7 +4588,12 @@ static int __devinit hdmi_msm_probe(struct platform_device *pdev)
 		#undef GET_IRQ
 		return 0;
 	}
-
+//////////////////////////////////////////////////////////////////////////////////////////
+#if defined (CONFIG_MACH_MSM8960_EF44S)		/// EF44S only need registering fb2,it return.
+	fb_dev = msm_fb_add_device(pdev);
+	return 0;
+#endif	
+//////////////////////////////////////////////////////////////////////////////////////////
 	hdmi_msm_state->hdmi_app_clk = clk_get(&pdev->dev, "core_clk");
 	if (IS_ERR(hdmi_msm_state->hdmi_app_clk)) {
 		DEV_ERR("'core_clk' clk not found\n");
@@ -4766,7 +4771,7 @@ static int hdmi_msm_hpd_feature(int on)
 		rc = hdmi_msm_hpd_on();
 	} else {
 		if (external_common_state->hpd_state) {
-			external_common_state->hpd_state = 0;
+		external_common_state->hpd_state = 0;
 
 			/* Send offline event to switch OFF HDMI and HAL FD */
 			hdmi_msm_send_event(HPD_EVENT_OFFLINE);
