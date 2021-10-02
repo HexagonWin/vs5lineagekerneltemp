@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2010-2012, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -50,6 +50,13 @@
 
 #define SCM_IO_DISABLE_PMIC_ARBITER	1
 
+#ifdef CONFIG_LGE_CRASH_HANDLER
+#define LGE_ERROR_HANDLER_MAGIC_NUM	0xA97F2C46
+#define LGE_ERROR_HANDLER_MAGIC_ADDR	0x18
+void *lge_error_handler_cookie_addr;
+static int ssr_magic_number = 0;
+#endif
+
 static int restart_mode;
 void *restart_reason;
 
@@ -86,6 +93,10 @@ static void set_dload_mode(int on)
 		__raw_writel(on ? 0xE47B337D : 0, dload_mode_addr);
 		__raw_writel(on ? 0xCE14091A : 0,
 		       dload_mode_addr + sizeof(unsigned int));
+#ifdef CONFIG_LGE_CRASH_HANDLER
+		__raw_writel(on ? LGE_ERROR_HANDLER_MAGIC_NUM : 0,
+				lge_error_handler_cookie_addr);
+#endif
 		mb();
 	}
 }
@@ -107,6 +118,9 @@ static int dload_set(const char *val, struct kernel_param *kp)
 	}
 
 	set_dload_mode(download_mode);
+#ifdef CONFIG_LGE_CRASH_HANDLER
+	ssr_magic_number = 0;
+#endif
 
 	return 0;
 }
@@ -139,6 +153,10 @@ static void set_force_offline_mode(void)
 void msm_set_restart_mode(int mode)
 {
 	restart_mode = mode;
+#ifdef CONFIG_LGE_CRASH_HANDLER
+	if (download_mode == 1 && (mode & 0xFFFF0000) == 0x6D630000)
+		panic("LGE crash handler detected panic");
+#endif
 }
 EXPORT_SYMBOL(msm_set_restart_mode);
 
@@ -221,8 +239,13 @@ void msm_restart(char mode, const char *cmd)
 	set_dload_mode(in_panic);
 
 	/* Write download mode flags if restart_mode says so */
-	if (restart_mode == RESTART_DLOAD)
+	if (restart_mode == RESTART_DLOAD) {
 		set_dload_mode(1);
+#ifdef CONFIG_LGE_CRASH_HANDLER
+		writel(0x6d63c421, restart_reason);
+		goto reset;
+#endif
+	}
 
 	/* Kill download mode if master-kill switch is set */
 	if (!download_mode)
@@ -243,15 +266,12 @@ void msm_restart(char mode, const char *cmd)
 
 	pm8xxx_reset_pwr_off(1);
 
-	if (cmd != NULL) 
-	{
-		if (!strncmp(cmd, "bootloader", 10)){
+	if (cmd != NULL) {
+		if (!strncmp(cmd, "bootloader", 10)) {
 			__raw_writel(0x77665500, restart_reason);
-		} 
-		else if (!strncmp(cmd, "recovery", 8)){
+		} else if (!strncmp(cmd, "recovery", 8)) {
 			__raw_writel(0x77665502, restart_reason);
-		} 
-		else if (!strncmp(cmd, "oem-", 4)){
+		} else if (!strncmp(cmd, "oem-", 4)) {
 			unsigned long code;
 			code = simple_strtoul(cmd + 4, NULL, 16) & 0xff;
 			__raw_writel(0x6f656d00 | code, restart_reason);
@@ -295,6 +315,12 @@ void msm_restart(char mode, const char *cmd)
 	}
         writel(NORMAL_RESET_MAGIC_NUM, restart_reason+4);
 #endif /* CONFIG_PANTECH_WDOG_WORKAROUND */
+
+#ifdef CONFIG_LGE_CRASH_HANDLER
+	if (in_panic == 1)
+		set_kernel_crash_magic_number();
+reset:
+#endif /* CONFIG_LGE_CRASH_HANDLER */
 
 	__raw_writel(0, msm_tmr0_base + WDT0_EN);
 	if (!(machine_is_msm8x60_fusion() || machine_is_msm8x60_fusn_ffa())) {
@@ -346,6 +372,10 @@ static int __init msm_pmic_restart_init(void)
 		pr_warn("no pmic restart interrupt specified\n");
 	}
 
+#ifdef CONFIG_LGE_CRASH_HANDLER
+	__raw_writel(0x6d63ad00, restart_reason);
+#endif
+
 	return 0;
 }
 
@@ -356,6 +386,10 @@ static int __init msm_restart_init(void)
 #ifdef CONFIG_MSM_DLOAD_MODE
 	atomic_notifier_chain_register(&panic_notifier_list, &panic_blk);
 	dload_mode_addr = MSM_IMEM_BASE + DLOAD_MODE_ADDR;
+#ifdef CONFIG_LGE_CRASH_HANDLER
+	lge_error_handler_cookie_addr = MSM_IMEM_BASE +
+		LGE_ERROR_HANDLER_MAGIC_ADDR;
+#endif
 	set_dload_mode(download_mode);
 #endif
 	msm_tmr0_base = msm_timer_get_timer0_base();

@@ -100,7 +100,8 @@ static int mmc_queue_thread(void *d)
 
 		if (req || mq->mqrq_prev->req) {
 /* 20121221 LS1-JHM modified : enabling BKOPS for eMMC performance */
-#ifdef FEATURE_PANTECH_SAMSUNG_EMMC_BUG_FIX
+//#ifdef FEATURE_PANTECH_SAMSUNG_EMMC_BUG_FIX
+/*#if 0//disable alpha2x
 			if (host->bkops_started){
 				if(r1_state_flag){
 					host->req_bkops_timer_expired = false;				
@@ -118,7 +119,7 @@ static int mmc_queue_thread(void *d)
 #else
 			if (mmc_card_doing_bkops(mq->card))
 				mmc_interrupt_bkops(mq->card);
-#endif
+#endif*/
 			set_current_state(TASK_RUNNING);
 			mq->issue_fn(mq, req);
 		} else {
@@ -142,7 +143,7 @@ static int mmc_queue_thread(void *d)
 				host->req_bkops_block_timer_expired = false;
 			}
 #endif
-			mmc_start_bkops(mq->card);
+//			mmc_start_bkops(mq->card);
 
 /* 20121221 LS1-JHM modified : enabling BKOPS for eMMC performance */
 #ifdef FEATURE_PANTECH_SAMSUNG_EMMC_BUG_FIX
@@ -257,8 +258,10 @@ int mmc_init_queue(struct mmc_queue *mq, struct mmc_card *card,
 
 	memset(&mq->mqrq_cur, 0, sizeof(mq->mqrq_cur));
 	memset(&mq->mqrq_prev, 0, sizeof(mq->mqrq_prev));
+
 	INIT_LIST_HEAD(&mqrq_cur->packed_list);
 	INIT_LIST_HEAD(&mqrq_prev->packed_list);
+
 	mq->mqrq_cur = mqrq_cur;
 	mq->mqrq_prev = mqrq_prev;
 	mq->queue->queuedata = mq;
@@ -427,10 +430,11 @@ EXPORT_SYMBOL(mmc_cleanup_queue);
  * complete any outstanding requests.  This ensures that we
  * won't suspend while a request is being processed.
  */
-void mmc_queue_suspend(struct mmc_queue *mq)
+int mmc_queue_suspend(struct mmc_queue *mq)
 {
 	struct request_queue *q = mq->queue;
 	unsigned long flags;
+	int rc = 0;
 
 	if (!(mq->flags & MMC_QUEUE_SUSPENDED)) {
 		mq->flags |= MMC_QUEUE_SUSPENDED;
@@ -439,8 +443,20 @@ void mmc_queue_suspend(struct mmc_queue *mq)
 		blk_stop_queue(q);
 		spin_unlock_irqrestore(q->queue_lock, flags);
 
-		down(&mq->thread_sem);
+		rc = down_trylock(&mq->thread_sem);
+		if (rc) {
+			/*
+			 * Failed to take the lock so better to abort the
+			 * suspend because mmcqd thread is processing requests.
+			 */
+			mq->flags &= ~MMC_QUEUE_SUSPENDED;
+			spin_lock_irqsave(q->queue_lock, flags);
+			blk_start_queue(q);
+			spin_unlock_irqrestore(q->queue_lock, flags);
+			rc = -EBUSY;
+		}
 	}
+	return rc;
 }
 
 /**

@@ -1101,9 +1101,6 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 
 	/* we handle all standard USB descriptors */
 	case USB_REQ_GET_DESCRIPTOR:
-#ifdef CONFIG_ANDROID_PANTECH_USB_MANAGER
-	  usb_data_transfer_callback();
-#endif
 		if (ctrl->bRequestType != USB_DIR_IN)
 			goto unknown;
 		switch (w_value >> 8) {
@@ -1367,6 +1364,10 @@ static void composite_disconnect(struct usb_gadget *gadget)
 		reset_config(cdev);
 	if (composite->disconnect)
 		composite->disconnect(cdev);
+	if (cdev->delayed_status != 0) {
+		INFO(cdev, "delayed status mismatch..resetting\n");
+		cdev->delayed_status = 0;
+	}
 	spin_unlock_irqrestore(&cdev->lock, flags);
 }
 
@@ -1628,7 +1629,7 @@ int usb_composite_probe(struct usb_composite_driver *driver,
 {
 	int retval;
 
-	if (!driver || !driver->dev || !bind || composite)
+	if (!driver || !driver->dev || !bind)
 		return -EINVAL;
 
 	if (!driver->name)

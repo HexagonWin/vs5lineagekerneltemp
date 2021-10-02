@@ -2644,7 +2644,7 @@ static int fsg_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 	clear_bit(IGNORE_BULK_OUT, &fsg->atomic_bitflags);
 	fsg->common->new_fsg = fsg;
 	raise_exception(fsg->common, FSG_STATE_CONFIG_CHANGE);
-#ifdef CONFIG_ANDROID_PANTECH_USB_MANAGER
+/*#ifdef CONFIG_ANDROID_PANTECH_USB_MANAGER
 #ifdef CONFIG_ANDROID_PANTECH_USB_CDFREE
 	if(pantech_cdrom_enabled){
 		if(pantech_cdrom_only){
@@ -2658,7 +2658,7 @@ static int fsg_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 #else
 	usb_interface_enum_cb(MSC_TYPE_FLAG);
 #endif
-#endif
+#endif*/
 	return USB_GADGET_DELAYED_STATUS;
 
 reset_bulk_int:
@@ -3010,15 +3010,6 @@ static struct fsg_common *fsg_common_init(struct fsg_common *common,
 	common->ep0req = cdev->req;
 	common->cdev = cdev;
 
-	/* Maybe allocate device-global string IDs, and patch descriptors */
-	if (fsg_strings[FSG_STRING_INTERFACE].id == 0) {
-		rc = usb_string_id(cdev);
-		if (unlikely(rc < 0))
-			goto error_release;
-		fsg_strings[FSG_STRING_INTERFACE].id = rc;
-		fsg_intf_desc.iInterface = rc;
-	}
-
 	/*
 	 * Create the LUNs, open their backing files, and register the
 	 * LUN devices in sysfs.
@@ -3339,6 +3330,15 @@ static int fsg_bind_config(struct usb_composite_dev *cdev,
 	struct fsg_dev *fsg;
 	int rc;
 
+	/* Maybe allocate device-global string IDs, and patch descriptors */
+	if (fsg_strings[FSG_STRING_INTERFACE].id == 0) {
+		rc = usb_string_id(cdev);
+		if (unlikely(rc < 0))
+			return -EINVAL;
+		fsg_strings[FSG_STRING_INTERFACE].id = rc;
+		fsg_intf_desc.iInterface = rc;
+	}
+
 	fsg = kzalloc(sizeof *fsg, GFP_KERNEL);
 	if (unlikely(!fsg))
 		return -ENOMEM;
@@ -3468,4 +3468,3 @@ fsg_common_from_params(struct fsg_common *common,
 	fsg_config_from_params(&cfg, params);
 	return fsg_common_init(common, cdev, &cfg);
 }
-

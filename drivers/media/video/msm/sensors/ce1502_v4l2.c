@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2011-2012, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -3001,13 +3001,13 @@ SKYCDBG("%s: %d, %d res=%d\n", __func__, __LINE__,update_type,res);
         ce1502_snapshot_config(s_ctrl);
     }
 #endif
-        
+
     msleep(30);
-    if (update_type == MSM_SENSOR_REG_INIT) {
+/*    if (update_type == MSM_SENSOR_REG_INIT) {
 		SKYCDBG("Register INIT\n");
-        s_ctrl->curr_csi_params = NULL;
+//        s_ctrl->curr_csi_params = NULL;
         msm_sensor_enable_debugfs(s_ctrl);
-		
+
         ce1502_sensor_init(s_ctrl);
 
     } else if (update_type == MSM_SENSOR_UPDATE_PERIODIC) {
@@ -3065,7 +3065,7 @@ SKYCDBG("%s: %d, %d res=%d\n", __func__, __LINE__,update_type,res);
             }
             sensor_mode = res;
 #endif
-//		msleep(30);
+//		msleep(30);*/
 	}
 	SKYCDBG("%s: %d x\n", __func__, __LINE__);
 	return rc;
@@ -3077,14 +3077,7 @@ int32_t ce1502_sensor_set_fps(struct msm_sensor_ctrl_t *s_ctrl,
 	//uint16_t total_lines_per_frame;
 	int32_t rc = 0;
 	SKYCDBG("%s: %d\n", __func__, __LINE__);
-#if 0	
-	s_ctrl->fps_divider = fps->fps_div;
 
-
-	rc = msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
-			s_ctrl->sensor_output_reg_addr->frame_length_lines,
-			total_lines_per_frame, MSM_CAMERA_I2C_WORD_DATA);
-#endif	
 	return rc;
 }
 
@@ -3985,7 +3978,7 @@ static struct msm_sensor_fn_t ce1502_func_tbl = {
 	.sensor_get_csi_params = msm_sensor_get_csi_params,  //yujm_temp
 //	.sensor_probe = msm_sensor_probe,
 //	.sensor_probe = ce1502_sensor_probe,
-#ifdef CONFIG_PANTECH_CAMERA
+/* alpha2x: Disable, not work?? #ifdef CONFIG_PANTECH_CAMERA
     .sensor_set_brightness = ce1502_sensor_set_brightness,
     .sensor_set_effect = ce1502_sensor_set_effect,
     .sensor_set_exposure_mode = ce1502_sensor_set_exposure_mode,
@@ -4013,7 +4006,7 @@ static struct msm_sensor_fn_t ce1502_func_tbl = {
     .sensor_get_frame_info = ce1502_get_frame_info,
 #endif
     .sensor_lens_stability = ce1502_lens_stability,
-#endif
+#endif*/
 };
 
 static struct msm_sensor_reg_t ce1502_regs = {
@@ -4040,7 +4033,7 @@ static struct msm_sensor_ctrl_t ce1502_s_ctrl = {
 	.sensor_i2c_addr = 0x78,
 	.sensor_id_info = &ce1502_id_info,
 	.cam_mode = MSM_SENSOR_MODE_INVALID,
-#if 1
+#if 0//disable by alpha2x
 	.csi_params = &ce1502_csi_params_array[0],
 #endif
 	.msm_sensor_mutex = &ce1502_mut,

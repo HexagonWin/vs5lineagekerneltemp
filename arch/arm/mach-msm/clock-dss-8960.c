@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2012, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2009-2013, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -175,6 +175,7 @@ int hdmi_pll_enable(void)
 			timeout_count = 1000;
 			pll_lock_retry--;
 		}
+		udelay(1);
 	}
 
 	if (!ahb_enabled)

@@ -718,7 +718,7 @@ SKYCDBG("%s:[F_PANTECH_CAMERA] %d, %d res=%d\n", __func__, __LINE__,update_type,
 
 	msleep(30);
 	if (update_type == MSM_SENSOR_REG_INIT) {
-		s_ctrl->curr_csi_params = NULL;
+//		s_ctrl->curr_csi_params = NULL;
 		g_preview_fps= 0;
 		msm_sensor_enable_debugfs(s_ctrl);
 #ifdef CONFIG_PANTECH_CAMERA_TUNER 

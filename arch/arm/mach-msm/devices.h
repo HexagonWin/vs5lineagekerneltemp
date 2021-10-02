@@ -1,7 +1,7 @@
 /* linux/arch/arm/mach-msm/devices.h
  *
  * Copyright (C) 2008 Google, Inc.
- * Copyright (c) 2009-2012, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2013, The Linux Foundation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -53,7 +53,9 @@ extern struct platform_device msm_device_uart_dm3;
 extern struct platform_device msm_device_uart_dm12;
 extern struct platform_device *msm_device_uart_gsbi9;
 extern struct platform_device msm_device_uart_dm6;
+extern struct platform_device msm_device_uart_dm8;
 extern struct platform_device msm_device_uart_dm9;
+extern struct platform_device mpq8064_device_uartdm_gsbi6;
 
 extern struct platform_device msm8960_device_uart_gsbi2;
 extern struct platform_device msm8960_device_uart_gsbi5;
@@ -293,7 +295,7 @@ extern struct platform_device apq_cpudai_slimbus_3_rx;
 extern struct platform_device apq_cpudai_slimbus_3_tx;
 extern struct platform_device apq_cpudai_slim_4_rx;
 extern struct platform_device apq_cpudai_slim_4_tx;
-
+/* VS5-Lineage alpha2x: Replace with newer information
 extern struct platform_device *msm_footswitch_devices[];
 extern unsigned msm_num_footswitch_devices;
 extern struct platform_device *msm8660_footswitch[];
@@ -303,7 +305,26 @@ extern unsigned msm8960_num_footswitch;
 extern struct platform_device *apq8064_footswitch[];
 extern unsigned apq8064_num_footswitch;
 extern struct platform_device *msm8930_footswitch[];
+extern unsigned msm8930_num_footswitch;*/
+
+extern struct platform_device *msm_footswitch_devices[];
+extern unsigned msm_num_footswitch_devices;
+extern struct platform_device *msm8660_footswitch[];
+extern unsigned msm8660_num_footswitch;
+extern struct platform_device *msm8960_footswitch[];
+extern unsigned msm8960_num_footswitch;
+extern struct platform_device *msm8960ab_footswitch[];
+extern unsigned msm8960ab_num_footswitch;
+extern struct platform_device *apq8064_footswitch[];
+extern unsigned apq8064_num_footswitch;
+extern struct platform_device *msm8930_footswitch[];
 extern unsigned msm8930_num_footswitch;
+extern struct platform_device *msm8930_pm8917_footswitch[];
+extern unsigned msm8930_pm8917_num_footswitch;
+extern struct platform_device *msm8627_footswitch[];
+extern unsigned msm8627_num_footswitch;
+/* VS5-Lineage */
+
 
 extern struct platform_device fsm_qfp_fuse_device;
 
@@ -371,13 +392,14 @@ extern struct platform_device msm8064_device_watchdog;
 extern struct platform_device msm9615_device_watchdog;
 extern struct platform_device fsm9xxx_device_watchdog;
 
-extern struct platform_device apq8064_qdss_device;
-extern struct platform_device msm_qdss_device;
-extern struct platform_device msm_etb_device;
-extern struct platform_device msm_tpiu_device;
-extern struct platform_device msm_funnel_device;
-extern struct platform_device msm_etm_device;
-extern struct platform_device apq8064_etm_device;
+extern struct platform_device coresight_tpiu_device;
+extern struct platform_device coresight_etb_device;
+extern struct platform_device coresight_funnel_device;
+extern struct platform_device apq8064_coresight_funnel_device;
+extern struct platform_device coresight_etm0_device;
+extern struct platform_device coresight_etm1_device;
+extern struct platform_device coresight_etm2_device;
+extern struct platform_device coresight_etm3_device;
 #endif
 
 extern struct platform_device msm_bus_8064_apps_fabric;
@@ -387,16 +409,12 @@ extern struct platform_device msm_bus_8064_sys_fpb;
 extern struct platform_device msm_bus_8064_cpss_fpb;
 
 extern struct platform_device mdm_8064_device;
+extern struct platform_device i2s_mdm_8064_device;
 extern struct platform_device msm_dsps_device_8064;
 extern struct platform_device *msm_8974_stub_regulator_devices[];
 extern int msm_8974_stub_regulator_devices_len;
 
-extern struct platform_device msm8960_cpu_idle_device;
-extern struct platform_device msm8930_cpu_idle_device;
-extern struct platform_device apq8064_cpu_idle_device;
-
-extern struct platform_device msm8960_msm_gov_device;
-extern struct platform_device msm8930_msm_gov_device;
+extern struct platform_device apq8064_dcvs_device;
 extern struct platform_device apq8064_msm_gov_device;
 
 extern struct platform_device msm_bus_8930_apps_fabric;
@@ -440,5 +458,19 @@ extern struct platform_device msm8x50_device_acpuclk;
 extern struct platform_device msm8x60_device_acpuclk;
 extern struct platform_device msm8930_device_acpuclk;
 extern struct platform_device msm8930aa_device_acpuclk;
+extern struct platform_device msm8930ab_device_acpuclk;
 extern struct platform_device msm8960_device_acpuclk;
+extern struct platform_device msm8960ab_device_acpuclk;
 extern struct platform_device msm9615_device_acpuclk;
+
+extern struct platform_device apq8064_msm_mpd_device;
+
+extern struct platform_device msm_gpio_device;
+
+extern struct platform_device amdm_8064_device;
+extern struct platform_device bmdm_8064_device;
+
+extern struct platform_device sglte_mdm_8064_device;
+extern struct platform_device sglte2_qsc_8064_device;
+
+extern struct dev_avtimer_data dev_avtimer_pdata;

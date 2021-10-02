@@ -1028,7 +1028,7 @@ static struct gpiomux_setting gsbi_uart = {
 };
 
 #if defined(CONFIG_PANTECH_PMIC_MAX17058)
-#if defined(T_EF44S) || defined(T_MAGNUS)
+#if defined(CONFIG_MACH_MSM8960_EF44S) || defined(T_MAGNUS)
 static struct gpiomux_setting gsbi9_active_cfg = {
 	.func = GPIOMUX_FUNC_2,
 	.drv = GPIOMUX_DRV_2MA,
@@ -1059,7 +1059,7 @@ static struct gpiomux_setting cdc_mclk = {
 	.pull = GPIOMUX_PULL_NONE,
 };
 
-#if (BOARD_VER>WS10 && defined(CONFIG_MACH_MSM8960_EF44S))
+#if defined(CONFIG_MACH_MSM8960_EF44S)
 static struct gpiomux_setting audio_auxpcm[] = {
 	/* Suspended state */
 	{
@@ -1416,7 +1416,7 @@ static struct msm_gpiomux_config msm8960_gsbi_configs[] __initdata = {
 		},
 	},
 #if defined(CONFIG_PANTECH_PMIC_MAX17058)
-#if defined(T_EF44S) || defined(T_MAGNUS)
+#if defined(CONFIG_MACH_MSM8960_EF44S) || defined(T_MAGNUS)
     {
         .gpio      = 95,    /* GSBI9 I2C QUP SDA */
         .settings = {
@@ -1547,7 +1547,7 @@ static struct msm_gpiomux_config msm8960_audio_codec_configs[] __initdata = {
 	},
 };
 
-#if (BOARD_VER>WS10 && defined(CONFIG_MACH_MSM8960_EF44S))
+#if defined(CONFIG_MACH_MSM8960_EF44S)
 static struct msm_gpiomux_config msm8960_audio_auxpcm_configs[] __initdata = {
 	{
 		.gpio = 63,
@@ -2044,7 +2044,7 @@ static struct msm_gpiomux_config msm8960_pm_irq_configs[] __initdata = {
 };
 #endif
 #ifdef CONFIG_PANTECH_SND //kdkim
-#if defined(T_EF44S) || defined(T_VEGAPVW)
+#if defined(CONFIG_MACH_MSM8960_EF44S) || defined(T_VEGAPVW)
 static struct gpiomux_setting heaset_detect_active_cfg = {
 	.func = GPIOMUX_FUNC_GPIO,
 	.drv = GPIOMUX_DRV_2MA,
@@ -2238,7 +2238,7 @@ int __init msm8960_init_gpiomux(void)
 	msm_gpiomux_install(msm8960_audio_codec_configs,
 			ARRAY_SIZE(msm8960_audio_codec_configs));
 
-#if (BOARD_VER>WS10 && defined(CONFIG_MACH_MSM8960_EF44S))
+#if defined(CONFIG_MACH_MSM8960_EF44S)
 	  msm_gpiomux_install(msm8960_audio_auxpcm_configs,
 		ARRAY_SIZE(msm8960_audio_auxpcm_configs));
 #else
@@ -2308,7 +2308,7 @@ int __init msm8960_init_gpiomux(void)
 			ARRAY_SIZE(msm8960_pm_irq_configs));
 #endif
 #ifdef CONFIG_PANTECH_SND //kdkim
-#if defined(T_EF44S) || defined(T_VEGAPVW)
+#if defined(CONFIG_MACH_MSM8960_EF44S) || defined(T_VEGAPVW)
 	msm_gpiomux_install(headset_detect_irq_configs,
 			ARRAY_SIZE(headset_detect_irq_configs));
 #endif

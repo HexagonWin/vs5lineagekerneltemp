@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2011-2012, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -234,6 +234,27 @@ static int msm_voip_dtx_mode_get(struct snd_kcontrol *kcontrol,
 
 	return 0;
 }
+static int msm_voip_fens_put(struct snd_kcontrol *kcontrol,
+			struct snd_ctl_elem_value *ucontrol)
+{
+	int fens_enable = ucontrol->value.integer.value[0];
+
+	pr_debug("%s: FENS_VOIP enable=%d\n", __func__, fens_enable);
+
+	voc_set_pp_enable(voc_get_session_id(VOIP_SESSION_NAME),
+				MODULE_ID_VOICE_MODULE_FENS, fens_enable);
+
+	return 0;
+}
+
+static int msm_voip_fens_get(struct snd_kcontrol *kcontrol,
+			struct snd_ctl_elem_value *ucontrol)
+{
+	ucontrol->value.integer.value[0] =
+			voc_get_pp_enable(voc_get_session_id(VOIP_SESSION_NAME),
+				 MODULE_ID_VOICE_MODULE_FENS);
+	return 0;
+}
 
 static struct snd_kcontrol_new msm_voip_controls[] = {
 	SOC_SINGLE_EXT("Voip Tx Mute", SND_SOC_NOPM, 0, 1, 0,
@@ -245,6 +266,8 @@ static struct snd_kcontrol_new msm_voip_controls[] = {
 				msm_voip_mode_rate_config_put),
 	SOC_SINGLE_EXT("Voip Dtx Mode", SND_SOC_NOPM, 0, 1, 0,
 				msm_voip_dtx_mode_get, msm_voip_dtx_mode_put),
+	SOC_SINGLE_EXT("FENS_VOIP Enable", SND_SOC_NOPM, 0, 1, 0,
+			   msm_voip_fens_get, msm_voip_fens_put),
 };
 
 static int msm_pcm_voip_probe(struct snd_soc_platform *platform)
@@ -533,7 +556,6 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 				(!list_empty(&prtd->free_in_queue) ||
 				prtd->state == VOIP_STOPPED),
 				1 * HZ);
-
 	if (ret > 0) {
 		if (count <= VOIP_MAX_VOC_PKT_SIZE) {
 			spin_lock_irqsave(&prtd->dsp_lock, dsp_flags);
@@ -572,7 +594,6 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 
 	return  ret;
 }
-
 static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 		int channel, snd_pcm_uframes_t hwoff, void __user *buf,
 						snd_pcm_uframes_t frames)
@@ -641,14 +662,13 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 	}
 	return ret;
 }
-
 static int msm_pcm_copy(struct snd_pcm_substream *substream, int a,
 	 snd_pcm_uframes_t hwoff, void __user *buf, snd_pcm_uframes_t frames)
 {
 	int ret = 0;
 
-    if(substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-       		ret = msm_pcm_playback_copy(substream, a, hwoff, buf, frames);
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+		ret = msm_pcm_playback_copy(substream, a, hwoff, buf, frames);
 	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
 		ret = msm_pcm_capture_copy(substream, a, hwoff, buf, frames);
 

@@ -102,7 +102,7 @@ static inline struct f_gser *port_to_gser(struct gserial *p)
 	return container_of(p, struct f_gser, port);
 }
 #define GS_LOG2_NOTIFY_INTERVAL		5	/* 1 << 5 == 32 msec */
-#define GS_NOTIFY_MAXPACKET		10	/* notification + 2 bytes */
+#define GS_NOTIFY_MAXPACKET		16
 #endif
 /*-------------------------------------------------------------------------*/
 
@@ -407,7 +407,6 @@ static int gport_setup(struct usb_configuration *c)
 		ret = ghsic_ctrl_setup(no_hsic_sports, USB_GADGET_SERIAL);
 		if (ret < 0)
 			return ret;
-		return 0;
 	}
 	if (no_hsuart_sports) {
 		port_idx = ghsuart_data_setup(no_hsuart_sports,
@@ -422,8 +421,6 @@ static int gport_setup(struct usb_configuration *c)
 				port_idx++;
 			}
 		}
-
-		return 0;
 	}
 	return ret;
 }
@@ -677,10 +674,10 @@ static int gser_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 #else
 	gport_connect(gser);
 #endif
-	gser->online = 1;
+	gser->online = 1;/*
 #ifdef CONFIG_ANDROID_PANTECH_USB_MANAGER
 	usb_interface_enum_cb(ACM_TYPE_FLAG);
-#endif
+#endif*/
 	return rc;
 }
 
@@ -696,6 +693,7 @@ static void gser_disable(struct usb_function *f)
 #ifdef CONFIG_MODEM_SUPPORT
 	usb_ep_fifo_flush(gser->notify);
 	usb_ep_disable(gser->notify);
+	gser->notify->driver_data = NULL;
 #endif
 	gser->online = 0;
 }
@@ -877,7 +875,7 @@ gser_bind(struct usb_configuration *c, struct usb_function *f)
 	struct usb_ep		*ep;
 
 	/* allocate instance-specific interface IDs */
-#if defined(CONFIG_ANDROID_PANTECH_USB)
+/*#if defined(CONFIG_ANDROID_PANTECH_USB)
 //	if((pantech_usb_carrier != CARRIER_QUALCOMM) && b_pantech_usb_module){
 	if(pantech_usb_carrier != CARRIER_QUALCOMM){
 		gser_fs_function = pantech_gser_fs_function;
@@ -913,7 +911,7 @@ gser_bind(struct usb_configuration *c, struct usb_function *f)
 		goto fail;
 	gser->data_id = status;
 	gser_interface_desc.bInterfaceNumber = status;
-#endif
+#endif*/
 	status = -ENODEV;
 
 	/* allocate instance-specific endpoints */
@@ -1114,9 +1112,11 @@ int gser_bind_config(struct usb_configuration *c, u8 port_num)
 /**
  * gserial_init_port - bind a gserial_port to its transport
  */
-static int gserial_init_port(int port_num, const char *name)
+static int gserial_init_port(int port_num, const char *name,
+		const char *port_name)
 {
 	enum transport_type transport;
+	int ret = 0;
 
 	if (port_num >= GSERIAL_NO_PORTS)
 		return -ENODEV;
@@ -1142,6 +1142,9 @@ static int gserial_init_port(int port_num, const char *name)
 		no_smd_ports++;
 		break;
 	case USB_GADGET_XPORT_HSIC:
+		ghsic_ctrl_set_port_name(port_name, name);
+		ghsic_data_set_port_name(port_name, name);
+
 		/*client port number will be updated in gport_setup*/
 		no_hsic_sports++;
 		break;
@@ -1157,5 +1160,5 @@ static int gserial_init_port(int port_num, const char *name)
 
 	nr_ports++;
 
-	return 0;
+	return ret;
 }

@@ -372,6 +372,11 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
+		   -Wno-unused-variable \
+		   -Wno-maybe-uninitialized \
+		   -Wno-unused-function \
+		   -Wno-declaration-after-statement \
+		   -Wno-return-type \
 		   -fno-delete-null-pointer-checks
 
 $(info "======================LINUX INCLUDE===========================================================")
@@ -651,7 +656,8 @@ NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
 CHECKFLAGS     += $(NOSTDINC_FLAGS)
 
 # warn about C99 declaration after statement
-KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
+#KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
+# alpha2x disable temp
 
 # disable pointer signed / unsigned warnings in gcc 4.0
 KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
