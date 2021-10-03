@@ -985,15 +985,6 @@ static int msm_mctl_dev_close(struct file *f)
 	pcam_inst->streamon = 0;
 	pcam->mctl_node.use_count--;
 	pcam->mctl_node.dev_inst_map[pcam_inst->image_mode] = NULL;
-
-	if(pcam_inst->avtimerOn){
-	    iounmap(pcam_inst->p_avtimer_lsw);
-	    iounmap(pcam_inst->p_avtimer_msw);
-	    //Turn OFF DSP/Enable power collapse
-	    avcs_core_disable_power_collapse(0);
-	    pcam_inst->avtimerOn = 0;
-	}
-
 	if (pcam_inst->vbqueue_initialized)
 		vb2_queue_release(&pcam_inst->vid_bufq);
 	D("%s Closing down instance %p ", __func__, pcam_inst);
@@ -1097,12 +1088,6 @@ static int msm_mctl_v4l2_s_ctrl(struct file *f, void *pctx,
 			pr_err("%s inst %p Copying plane_info failed ",
 					__func__, pcam_inst);
 			rc = -EFAULT;
-		} else if (pcam_inst->plane_info.num_planes
-				> VIDEO_MAX_PLANES) {
-			pr_err("%s: inst %p got invalid num_planes (%d)",
-					__func__, pcam_inst,
-					pcam_inst->plane_info.num_planes);
-			rc = -EINVAL;
 		}
 
 		D("%s inst %p got plane info: num_planes = %d," \
@@ -1111,16 +1096,6 @@ static int msm_mctl_v4l2_s_ctrl(struct file *f, void *pctx,
 				pcam_inst->plane_info.plane[0].size,
 				pcam_inst->plane_info.plane[1].size);
 
-	} else if (ctrl->id == MSM_V4L2_PID_AVTIMER){
-		pcam_inst->avtimerOn = ctrl->value;
-		D("%s: mmap_inst=(0x%p, %d) AVTimer=%d\n",
-			 __func__, pcam_inst, pcam_inst->my_index, ctrl->value);
-		/*Kernel drivers to access AVTimer*/
-		avcs_core_open();
-		/*Turn ON DSP/Disable power collapse*/
-		avcs_core_disable_power_collapse(1);
-		pcam_inst->p_avtimer_lsw = ioremap(AVTIMER_LSW_PHY_ADDR, 4);
-		pcam_inst->p_avtimer_msw = ioremap(AVTIMER_MSW_PHY_ADDR, 4);
 	} else
 		pr_err("%s Unsupported S_CTRL Value ", __func__);
 

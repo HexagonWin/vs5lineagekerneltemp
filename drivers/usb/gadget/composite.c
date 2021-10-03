@@ -1698,7 +1698,7 @@ void usb_composite_setup_continue(struct usb_composite_dev *cdev)
 
 	spin_unlock_irqrestore(&cdev->lock, flags);
 }
-
+/*
 #ifdef	CONFIG_ANDROID_PANTECH_USB_ABNORMAL_CHARGER_INFO
 extern int get_udc_state(char *udc_state);
 int composite_get_udc_state(char *udc_state)
@@ -1707,3 +1707,4 @@ int composite_get_udc_state(char *udc_state)
 }
 EXPORT_SYMBOL(composite_get_udc_state);
 #endif
+*/

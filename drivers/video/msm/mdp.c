@@ -39,9 +39,9 @@
 #include <mach/clk.h>
 #include "mdp.h"
 #include "msm_fb.h"
-#ifdef CONFIG_FB_MSM_MDP40
+//#ifdef CONFIG_FB_MSM_MDP40
 #include "mdp4.h"
-#endif
+//#endif
 #include "mipi_dsi.h"
 
 uint32 mdp4_extn_disp;

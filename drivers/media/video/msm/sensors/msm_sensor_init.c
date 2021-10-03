@@ -14,11 +14,11 @@
 #include "msm_sensor.h"
 #include "msm.h"
 #include "msm_sensor_bayer.h"
-#include "imx091.h"
-
+//#include "imx091.h"
+// WORKAROUND alpha2x VS5-Lineage : WORKAROUND DISABLE
 static struct i2c_driver *sensor_i2c_driver[] = {
 	/* back camera */
-	&imx091_i2c_driver,
+//	&imx091_i2c_driver,
 	/* front camera */
 };
 
