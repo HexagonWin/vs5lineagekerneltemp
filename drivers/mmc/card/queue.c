@@ -74,7 +74,7 @@ static int mmc_queue_thread(void *d)
 		req = NULL;	/* Must be set to NULL at each iteration */
 
 /* 20121221 LS1-JHM modified : enabling BKOPS for eMMC performance */
-#ifdef FEATURE_PANTECH_SAMSUNG_EMMC_BUG_FIX
+/*#ifdef FEATURE_PANTECH_SAMSUNG_EMMC_BUG_FIX
 
 		host = mq->card->host;
 
@@ -91,7 +91,7 @@ static int mmc_queue_thread(void *d)
 				continue;
 			}	
 		}
-#endif
+#endif*/
 		spin_lock_irq(q->queue_lock);
 		set_current_state(TASK_INTERRUPTIBLE);
 		req = blk_fetch_request(q);
