@@ -1227,23 +1227,13 @@ static void msm_otg_start_host(struct usb_otg *otg, int on)
 	struct msm_otg *motg = container_of(otg->phy, struct msm_otg, phy);
 	struct msm_otg_platform_data *pdata = motg->pdata;
 	struct usb_hcd *hcd;
-#if defined(FEATURE_ANDROID_PANTECH_USB_OTG_MODE) || defined(FEATURE_ANDROID_PANTECH_USB_SMB_OTG_MODE)
-	static atomic_t host_enabled_excl = ATOMIC_INIT(0);
-#endif
+	int rc;
 
 	if (!otg->host)
 		return;
 
 	hcd = bus_to_hcd(otg->host);
 
-#if defined(FEATURE_ANDROID_PANTECH_USB_OTG_MODE) || defined(FEATURE_ANDROID_PANTECH_USB_SMB_OTG_MODE)
-	if(atomic_read(&host_enabled_excl) == !!on){
-		printk(KERN_ERR "%s : error..same status\n", __func__);
-		return;
-	}else{
-		atomic_set(&host_enabled_excl, !!on);
-	}
-#endif
 	if (on) {
 		dev_dbg(otg->phy->dev, "host on\n");
 
@@ -1258,18 +1248,17 @@ static void msm_otg_start_host(struct usb_otg *otg, int on)
 		 */
 		if (pdata->setup_gpio)
 			pdata->setup_gpio(OTG_STATE_A_HOST);
-#if defined(T_EF44S) && defined(FEATURE_HSUSB_SET_SIGNALING_PARAM)
-		//set to qualcomm default.
-#if defined(CONFIG_PANTECH_PMIC)
-		if(get_hw_revision() <= 5){
-			printk(KERN_ERR "%s : phy is set to qc-default\n", __func__);
-		ulpi_write(otg->phy, 0x33, 0x81);
-		ulpi_write(otg->phy, 0x13, 0x83);
-		}else{
-			printk(KERN_ERR "%s : hw_revision is PP\n", __func__);
-		}
-#endif
-#endif
+
+		/*
+		 * Increase 3.3V rail voltage to increase cross over voltage.
+		 * This is required to get some full speed audio headsets
+		 * working.
+		 */
+		rc = regulator_set_voltage(hsusb_3p3, USB_PHY_3P3_VOL_MAX,
+				USB_PHY_3P3_VOL_MAX);
+		if (rc)
+			dev_dbg(otg->phy->dev, "unable to increase 3.3V rail\n");
+
 		usb_add_hcd(hcd, hcd->irq, IRQF_SHARED);
 	} else {
 		dev_dbg(otg->phy->dev, "host off\n");
@@ -1284,19 +1273,12 @@ static void msm_otg_start_host(struct usb_otg *otg, int on)
 		if (pdata->otg_control == OTG_PHY_CONTROL)
 			ulpi_write(otg->phy, OTG_COMP_DISABLE,
 				ULPI_CLR(ULPI_PWR_CLK_MNG_REG));
-#if defined(T_EF44S) && defined(FEATURE_HSUSB_SET_SIGNALING_PARAM)
-		//set to ef44 value.
-#if defined(CONFIG_PANTECH_PMIC)
-		if(get_hw_revision() <= 5){
-			printk(KERN_ERR "%s : phy is set to ef44-default\n", __func__);
-		ulpi_write(otg->phy, 0x3D, 0x81);
-		ulpi_write(otg->phy, 0x33, 0x83);
-		}else{
-			printk(KERN_ERR "%s : hw_revision is PP\n", __func__);
+
+		rc = regulator_set_voltage(hsusb_3p3, USB_PHY_3P3_VOL_MIN,
+				USB_PHY_3P3_VOL_MAX);
+		if (rc)
+			dev_dbg(otg->phy->dev, "unable to restore 3.075V rail\n");
 	}
-#endif
-#endif
-}
 }
 
 static int msm_otg_usbdev_notify(struct notifier_block *self,
@@ -2323,21 +2305,10 @@ static void msm_otg_init_sm(struct msm_otg *motg)
 				clear_bit(B_SESS_VLD, &motg->inputs);
 		} else if (pdata->otg_control == OTG_PMIC_CONTROL) {
 			if (pdata->pmic_id_irq) {
-				unsigned long flags;
-				local_irq_save(flags);
-#if defined(FEATURE_ANDROID_PANTECH_USB_OTG_MODE) || defined(FEATURE_ANDROID_PANTECH_USB_SMB_OTG_MODE)
-				if (motg->pmic_id_status) {
-					set_bit(ID, &motg->inputs);
-				} else {
-					clear_bit(ID, &motg->inputs);
-				}
-#else
-				if (irq_read_line(pdata->pmic_id_irq))
+				if (msm_otg_read_pmic_id_state(motg))
 					set_bit(ID, &motg->inputs);
 				else
 					clear_bit(ID, &motg->inputs);
-#endif
-				local_irq_restore(flags);
 			}
 			/*
 			 * VBUS initial state is reported after PMIC
@@ -2453,12 +2424,13 @@ static void msm_otg_sm_work(struct work_struct *w)
 						OTG_STATE_B_PERIPHERAL;
 					break;
 				case USB_SDP_CHARGER:
-#ifdef CONFIG_ANDROID_PANTECH_USB_ABNORMAL_CHARGER_INFO
-					msm_otg_notify_charger(motg, IUNIT);
-#endif
-					msm_otg_start_peripheral(otg, 1);
-					otg->phy->state =
-						OTG_STATE_B_PERIPHERAL;
+					if(!slimport_is_connected()) {
+						msm_otg_start_peripheral(otg, 1);
+						otg->phy->state =
+							OTG_STATE_B_PERIPHERAL;
+					}
+					schedule_delayed_work(&motg->check_ta_work,
+						MSM_CHECK_TA_DELAY);
 					break;
 				default:
 					break;
@@ -3107,26 +3079,6 @@ static irqreturn_t msm_otg_irq(int irq, void *data)
 	return ret;
 }
 
-#ifdef FEATURE_PANTECH_USB_CABLE_CONNECT
-static void msm_otg_connect_work(struct work_struct *data)
-{
-	struct msm_otg *motg = the_msm_otg;
-	struct usb_phy *phy = &motg->phy;
-	char *disconnect[2] = { "USB_CABLE=DISCONNECT", NULL };
-	char *connect[2]    = { "USB_CABLE=CONNECT", NULL };
-	char **uevent_envp = NULL;
-	if (motg->connect_state)
-		uevent_envp = connect;
-	else
-		uevent_envp = disconnect;
-	if (uevent_envp) {
-		kobject_uevent_env(&phy->dev->kobj, KOBJ_CHANGE, uevent_envp);
-		pr_info("%s: sent uevent %s\n", __func__, uevent_envp[0]);
-	}
-}
-#endif
-
-
 static void msm_otg_set_vbus_state(int online)
 {
 	static bool init;
@@ -3196,20 +3148,19 @@ static void msm_pmic_id_status_w(struct work_struct *w)
 static irqreturn_t msm_pmic_id_irq(int irq, void *data)
 {
 	struct msm_otg *motg = data;
-/*
-#if defined(FEATURE_ANDROID_PANTECH_USB_OTG_MODE) || defined(FEATURE_ANDROID_PANTECH_USB_SMB_OTG_MODE)
-	dev_dbg(motg->phy.dev, "[%s] aca_id_turned_on[%d]\n",__func__, aca_id_turned_on);
-	if(aca_id_turned_on)
+
+	if (test_bit(MHL, &motg->inputs) ||
+			mhl_det_in_progress) {
+		pr_debug("PMIC: Id interrupt ignored in MHL\n");
 		return IRQ_HANDLED;
 	}
 
-	if (!aca_id_turned_on)*/
+	if (!aca_id_turned_on)
 		/*schedule delayed work for 5msec for ID line state to settle*/
-/*		queue_delayed_work(system_nrt_wq, &motg->pmic_id_status_work,
+		queue_delayed_work(system_nrt_wq, &motg->pmic_id_status_work,
 				msecs_to_jiffies(MSM_PMIC_ID_STATUS_DELAY));
 
 	return IRQ_HANDLED;
-#endif*/
 }
 
 static int msm_otg_mode_show(struct seq_file *s, void *unused)
@@ -3451,62 +3402,6 @@ const struct file_operations msm_otg_bus_fops = {
 	.release = single_release,
 };
 
-#ifdef CONFIG_ANDROID_PANTECH_USB_OTG_INTENT
-static ssize_t print_otg_switch_name(struct switch_dev *sdev_otg, char *buf)
-{
-	return sprintf(buf, "%s\n", OTG_SWITCH_NAME);
-}
-
-static ssize_t print_otg_switch_state(struct switch_dev *sdev_otg, char *buf)
-{
-	return sprintf(buf, "%d\n", sdev_otg->state);
-}
-
-int set_otg_host_state(int mode)
-{
-	struct msm_otg *motg = the_msm_otg;
-	if(mode == 0)
-		switch_set_state(&motg->sdev_otg, 0);
-	else if(mode == 1)
-		switch_set_state(&motg->sdev_otg, 1);
-	else if(mode == 2)
-		switch_set_state(&motg->sdev_otg, 2);
-	else
-		return -1;	
-
-	return 0;
-	
-}
-
-static ssize_t print_otg_dev_switch_name(struct switch_dev *sdev_otg_dev, char *buf)
-{
-	return sprintf(buf, "%s\n", DEV_SWITCH_NAME);
-}
-
-static ssize_t print_otg_dev_switch_state(struct switch_dev *sdev_otg_dev, char *buf)
-{
-	return sprintf(buf, "%s\n", sdev_otg_dev->state ? "1" : "0");
-}
-
-int set_otg_dev_state(int mode)
-{
-	struct msm_otg *motg = the_msm_otg;
-	//printk("^^^^ set_otg_dev_state  %d\n",mode);
-	
-	if(mode == 0){
-		switch_set_state(&motg->sdev_otg_dev, 0);
-	}else if(mode == 1)
-		switch_set_state(&motg->sdev_otg_dev, 1);
-	else{
-		return -1;	
-	}
-
-	return 0;
-	
-}
-EXPORT_SYMBOL(set_otg_dev_state);
-#endif
-
 static struct dentry *msm_otg_dbg_root;
 
 static int msm_otg_debugfs_init(struct msm_otg *motg)
@@ -3698,10 +3593,6 @@ static int __init msm_otg_probe(struct platform_device *pdev)
 	struct msm_otg *motg;
 	struct usb_phy *phy;
 	struct msm_otg_platform_data *pdata;
-
-#ifdef	CONFIG_ANDROID_PANTECH_USB_OTG_INTENT
-	int retval = 0;
-#endif
 
 	dev_info(&pdev->dev, "msm_otg probe\n");
 
@@ -3897,9 +3788,7 @@ static int __init msm_otg_probe(struct platform_device *pdev)
 	INIT_WORK(&motg->sm_work, msm_otg_sm_work);
 	INIT_DELAYED_WORK(&motg->chg_work, msm_chg_detect_work);
 	INIT_DELAYED_WORK(&motg->pmic_id_status_work, msm_pmic_id_status_w);
-#ifdef FEATURE_PANTECH_USB_CABLE_CONNECT
-	INIT_WORK(&motg->connect_work, msm_otg_connect_work);
-#endif
+	INIT_DELAYED_WORK(&motg->check_ta_work, msm_ta_detect_work);
 	setup_timer(&motg->id_timer, msm_otg_id_timer_func,
 				(unsigned long) motg);
 	ret = request_irq(motg->irq, msm_otg_irq, IRQF_SHARED,
@@ -3958,12 +3847,6 @@ static int __init msm_otg_probe(struct platform_device *pdev)
 			goto remove_phy;
 		}
 	}
-/*
-#if defined(FEATURE_ANDROID_PANTECH_USB_OTG_MODE) || defined(FEATURE_ANDROID_PANTECH_USB_SMB_OTG_MODE)	
-	INIT_DELAYED_WORK(&motg->pmic_id_det, msm_otg_pmic_id_det);
-	motg->pmic_id_status = 1; //default high
-	schedule_delayed_work(&motg->pmic_id_det, USB_PMIC_ID_DET_DELAY);
-#endif*/
 
 	msm_hsusb_mhl_switch_enable(motg, 1);
 
@@ -3993,19 +3876,6 @@ static int __init msm_otg_probe(struct platform_device *pdev)
 	if (motg->pdata->enable_lpm_on_dev_suspend)
 		motg->caps |= ALLOW_LPM_ON_DEV_SUSPEND;
 
-#ifdef CONFIG_ANDROID_PANTECH_USB_OTG_INTENT
-	motg->sdev_otg.name = OTG_SWITCH_NAME;
-	motg->sdev_otg.print_name = print_otg_switch_name;
-	motg->sdev_otg.print_state = print_otg_switch_state;
-
-	retval = switch_dev_register(&motg->sdev_otg);
-
-	motg->sdev_otg_dev.name = DEV_SWITCH_NAME;
-	motg->sdev_otg_dev.print_name = print_otg_dev_switch_name;
-	motg->sdev_otg_dev.print_state = print_otg_dev_switch_state;
-
-	retval = switch_dev_register(&motg->sdev_otg_dev);
-#endif
 	wake_lock(&motg->wlock);
 	pm_runtime_set_active(&pdev->dev);
 	pm_runtime_enable(&pdev->dev);
@@ -4081,10 +3951,7 @@ static int __devexit msm_otg_remove(struct platform_device *pdev)
 	msm_otg_debugfs_cleanup();
 	cancel_delayed_work_sync(&motg->chg_work);
 	cancel_delayed_work_sync(&motg->pmic_id_status_work);
-
-#ifdef FEATURE_ANDROID_PANTECH_USB_OTG_MODE	
-	cancel_delayed_work_sync(&motg->pmic_id_det);
-#endif
+	cancel_delayed_work_sync(&motg->check_ta_work);
 	cancel_work_sync(&motg->sm_work);
 
 	pm_runtime_resume(&pdev->dev);

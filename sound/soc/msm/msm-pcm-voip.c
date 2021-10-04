@@ -44,10 +44,6 @@
 #define MODE_AMR_WB		0xD
 #define MODE_PCM		0xC
 
-#if 1 //20120625 jhsong : qct patch
-#define QCT_PATCH_142525 1
-#endif
-
 enum format {
 	FORMAT_S16_LE = 2,
 	FORMAT_SPECIAL = 31,
@@ -351,10 +347,7 @@ static void voip_process_ul_pkt(uint8_t *voc_pkt,
 		snd_pcm_period_elapsed(prtd->capture_substream);
 	} else {
 		spin_unlock_irqrestore(&prtd->dsp_ul_lock, dsp_flags);
-
-#if !defined(CONFIG_PANTECH_SND) // LS1@SND : reset occurs due to too many log during the VT 
 		pr_err("UL data dropped\n");
-#endif
 	}
 
 	wake_up(&prtd->out_wait);
@@ -431,9 +424,7 @@ static void voip_process_dl_pkt(uint8_t *voc_pkt,
 	} else {
 		*pkt_len = 0;
 		spin_unlock_irqrestore(&prtd->dsp_lock, dsp_flags);
-#if !defined(CONFIG_PANTECH_SND) // LS1@SND : reset occurs due to too many log during the VT 
 		pr_err("DL data not available\n");
-#endif
 	}
 	wake_up(&prtd->in_wait);
 }
@@ -563,9 +554,7 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 				list_first_entry(&prtd->free_in_queue,
 						struct voip_buf_node, list);
 			list_del(&buf_node->list);
-#ifdef QCT_PATCH_142525 //20120725 jhsong : qct patch 142525
 			spin_unlock_irqrestore(&prtd->dsp_lock, dsp_flags);
-#endif
 			if (prtd->mode == MODE_PCM) {
 				ret = copy_from_user(&buf_node->frame.voc_pkt,
 							buf, count);
@@ -573,10 +562,7 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 			} else
 				ret = copy_from_user(&buf_node->frame,
 							buf, count);
-
-#ifdef QCT_PATCH_142525 //20120725 jhsong : qct patch 142525
 			spin_lock_irqsave(&prtd->dsp_lock, dsp_flags);
-#endif
 			list_add_tail(&buf_node->list, &prtd->in_queue);
 			spin_unlock_irqrestore(&prtd->dsp_lock, dsp_flags);
 		} else {
@@ -604,6 +590,7 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct voip_drv_info *prtd = runtime->private_data;
 	unsigned long dsp_flags;
+	int size;
 
 	count = frames_to_bytes(runtime, frames);
 
@@ -621,25 +608,26 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 			buf_node = list_first_entry(&prtd->out_queue,
 					struct voip_buf_node, list);
 			list_del(&buf_node->list);
-#ifdef QCT_PATCH_142525 //20120725 jhsong : qct patch 142525
 			spin_unlock_irqrestore(&prtd->dsp_ul_lock, dsp_flags);
-#endif
-			if (prtd->mode == MODE_PCM)
+			if (prtd->mode == MODE_PCM) {
 				ret = copy_to_user(buf,
 						   &buf_node->frame.voc_pkt,
-						   count);
-			else
+						   buf_node->frame.len);
+			} else {
+				size = sizeof(buf_node->frame.header) +
+				       sizeof(buf_node->frame.len) +
+				       buf_node->frame.len;
+
 				ret = copy_to_user(buf,
 						   &buf_node->frame,
-						   count);
+						   size);
+			}
 			if (ret) {
 				pr_err("%s: Copy to user retuned %d\n",
 					__func__, ret);
 				ret = -EFAULT;
 			}
-#ifdef QCT_PATCH_142525 //20120725 jhsong : qct patch 142525
 			spin_lock_irqsave(&prtd->dsp_ul_lock, dsp_flags);
-#endif
 			list_add_tail(&buf_node->list,
 						&prtd->free_out_queue);
 			spin_unlock_irqrestore(&prtd->dsp_ul_lock, dsp_flags);
@@ -652,9 +640,7 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 
 
 	} else if (ret == 0) {
-#if !defined(CONFIG_PANTECH_SND) // LS1@SND : reset occurs due to too many log during the VT 	
 		pr_err("%s: No UL data available\n", __func__);
-#endif		
 		ret = -ETIMEDOUT;
 	} else {
 		pr_err("%s: Read was interrupted\n", __func__);
@@ -1212,3 +1198,4 @@ module_exit(msm_soc_platform_exit);
 
 MODULE_DESCRIPTION("PCM module platform driver");
 MODULE_LICENSE("GPL v2");
+

@@ -17,7 +17,7 @@ export CROSS_COMPILE=~/toolchain/bin/arm-eabi-
 # make zImage
 ##############################################################################
 mkdir -p ./obj/KERNEL_OBJ/
-make O=./obj/KERNEL_OBJ/ msm8960_ef44s_tp20_user_defconfig
+make O=./obj/KERNEL_OBJ/ LineageOS_ef44s_defconfig
 make O=./obj/KERNEL_OBJ/
 
 ##############################################################################

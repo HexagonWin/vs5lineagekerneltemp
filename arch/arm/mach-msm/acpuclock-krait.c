@@ -1023,21 +1023,7 @@ static void __init cpufreq_table_init(void)
     #if defined(CONFIG_PANTECH_PMIC)
     int chargerfreq;
 		for (i = 0; drv.acpu_freq_tbl[i].speed.khz != 0
-				&& freq_cnt < ARRAY_SIZE(*freq_table); i++) {
-            chargerfreq = 0; 
-
-        if (oem_smem_boot_mode_read() || drv.acpu_freq_tbl[i].speed.khz <= 384000) 
-            chargerfreq = 1; 
-        if (drv.acpu_freq_tbl[i].use_for_scaling && chargerfreq) { 
-				freq_table[cpu][freq_cnt].index = freq_cnt;
-				freq_table[cpu][freq_cnt].frequency
-					= drv.acpu_freq_tbl[i].speed.khz;
-				freq_cnt++;
-			}
-		}
-    #else
-    for (i = 0; drv.acpu_freq_tbl[i].speed.khz != 0
-				&& freq_cnt < ARRAY_SIZE(*freq_table); i++) {
+				&& freq_cnt < ARRAY_SIZE(*freq_table)-1; i++) {
 			if (drv.acpu_freq_tbl[i].use_for_scaling) {
 				freq_table[cpu][freq_cnt].index = freq_cnt;
 				freq_table[cpu][freq_cnt].frequency
