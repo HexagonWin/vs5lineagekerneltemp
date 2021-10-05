@@ -4065,6 +4065,12 @@ int mdp4_overlay_commit(struct fb_info *info)
 	return ret;
 }
 
+void mdp4_overlay_commit_finish(struct fb_info *info)
+{
+	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
+	mdp4_overlay_mdp_perf_upd(mfd, 0);
+}
+
 struct msm_iommu_ctx {
 	char *name;
 	int  domain;
@@ -4274,6 +4280,13 @@ int mdp4_v4l2_overlay_play(struct fb_info *info, struct mdp4_overlay_pipe *pipe,
 done:
 	mutex_unlock(&mfd->dma->ov_mutex);
 	return err;
+}
+
+int mdp4_overlay_reset()
+{
+	memset(&perf_request, 0, sizeof(perf_request));
+	memset(&perf_current, 0, sizeof(perf_current));
+	return 0;
 }
 
 #if defined(CONFIG_QUALCOMM_BUG_FIX_BLENDING)

@@ -3402,6 +3402,59 @@ const struct file_operations msm_otg_bus_fops = {
 	.release = single_release,
 };
 
+// VS5-Lineage alpha2x: Add Pantech CONFIG_ANDROID_PANTECH_USB_OTG_INTENT and Pantech Declarations.
+#ifdef CONFIG_ANDROID_PANTECH_USB_OTG_INTENT
+static ssize_t print_otg_switch_name(struct switch_dev *sdev_otg, char *buf)
+{
+	return sprintf(buf, "%s\n", OTG_SWITCH_NAME);
+}
+
+static ssize_t print_otg_switch_state(struct switch_dev *sdev_otg, char *buf)
+{
+	return sprintf(buf, "%d\n", sdev_otg->state);
+}
+
+int set_otg_host_state(int mode)
+{
+	struct msm_otg *motg = the_msm_otg;
+	if(mode == 0)
+		switch_set_state(&motg->sdev_otg, 0);
+	else if(mode == 1)
+		switch_set_state(&motg->sdev_otg, 1);
+	else if(mode == 2)
+		switch_set_state(&motg->sdev_otg, 2);
+	else
+		return -1;
+
+	return 0;
+}
+
+static ssize_t print_otg_dev_switch_name(struct switch_dev *sdev_otg_dev, char *buf)
+{
+	return sprintf(buf, "%s\n", DEV_SWITCH_NAME);
+}
+
+static ssize_t print_otg_dev_switch_state(struct switch_dev *sdev_otg_dev, char *buf)
+{
+	return sprintf(buf, "%s\n", sdev_otg_dev->state ? "1" : "0");
+}
+
+int set_otg_dev_state(int mode)
+{
+	struct msm_otg *motg = the_msm_otg;
+
+	if(mode == 0){
+		switch_set_state(&motg->sdev_otg_dev, 0);
+	}else if(mode == 1)
+		switch_set_state(&motg->sdev_otg_dev, 1);
+	else{
+		return -1;
+	}
+	return 0;
+}
+EXPORT_SYMBOL(set_otg_dev_state);
+#endif // CONFIG_ANDROID_PANTECH_USB_OTG_INTENT //
+
 static struct dentry *msm_otg_dbg_root;
 
 static int msm_otg_debugfs_init(struct msm_otg *motg)

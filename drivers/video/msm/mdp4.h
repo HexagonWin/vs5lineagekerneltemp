@@ -562,6 +562,10 @@ static inline int mdp4_dtv_pipe_commit(int cndx, int wait)
 {
 	return 0;
 }
+static inline void mdp4_dtv_free_base_pipe(struct msm_fb_data_type *mfd)
+{
+	/* empty */
+}
 #endif /* CONFIG_FB_MSM_DTV */
 
 void mdp4_dtv_set_black_screen(void);
