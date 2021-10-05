@@ -1526,21 +1526,6 @@ static struct lcdc_platform_data dtv_pdata = {
 	.lcdc_power_save = hdmi_panel_power,
 #endif
 };
-/* VS5-Lineage alpha2x: Same exists on later lines.
-#ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL // 20120905 jylee
-static int hdmi_panel_power(int on)
-{
-	int rc;
-
-	pr_debug("%s: HDMI Core: %s\n", __func__, (on ? "ON" : "OFF"));
-	rc = hdmi_core_power(on, 1);
-	if (rc)
-		rc = hdmi_cec_power(on);
-
-	pr_debug("%s: HDMI Core: %s Success\n", __func__, (on ? "ON" : "OFF"));
-	return rc;
-}
-#endif*/
 #endif
 
 #ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL

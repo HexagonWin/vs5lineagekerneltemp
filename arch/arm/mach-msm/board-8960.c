@@ -3072,7 +3072,7 @@ static struct msm_i2c_platform_data msm8960_i2c_qup_gsbi1_pdata = {
 static struct msm_i2c_platform_data msm8960_i2c_qup_gsbi4_pdata = {
 #ifdef CONFIG_PANTECH_CAMERA
 	.clk_freq = 384000,
-#else	
+#else
 	.clk_freq = 100000,
 #endif
 	.src_clk_rate = 24000000,
@@ -3407,7 +3407,7 @@ static int bluetooth_power(int on)
 	printk(KERN_ERR "%s: %d\n",__func__, on);
 
 	if (on) {
-		
+
 		for (pin = 0; pin < ARRAY_SIZE(bt_config_power_on); pin++) {
 			rc = gpio_tlmm_config(bt_config_power_on[pin], GPIO_CFG_ENABLE);
 			if (rc) {
@@ -3416,11 +3416,11 @@ static int bluetooth_power(int on)
 				return -EIO;
 			}
 		}
-		mdelay(20);    
+		mdelay(20);
 		gpio_set_value(GPIO_BT_RESET_N, 0);
-		mdelay(200); 
+		mdelay(200);
 		gpio_set_value(GPIO_BT_RESET_N, 1);
-		mdelay(200); 
+		mdelay(200);
 
 	} else {
 		for (pin = 0; pin < ARRAY_SIZE(bt_config_power_off); pin++) {
@@ -3431,9 +3431,9 @@ static int bluetooth_power(int on)
 				return -EIO;
 			}
 		}
-		mdelay(200); 
+		mdelay(200);
 		gpio_set_value(GPIO_BT_RESET_N, 0);
-		mdelay(20); 
+		mdelay(20);
 	}
 	return rc;
 }
@@ -3477,10 +3477,10 @@ static struct platform_device *common_devices[] __initdata = {
 	&msm_slim_ctrl,
 #if !defined(CONFIG_BRCM_BT) && !defined(CONFIG_WIFI_CONTROL_FUNC)
 	&msm_device_wcnss_wlan,
-#endif	
+#endif
 #ifdef CONFIG_WIFI_CONTROL_FUNC
 	&wlan_device,
-#endif //lee.eunsuk	
+#endif //lee.eunsuk
 #if defined(CONFIG_QSEECOM)
 	&qseecom_device,
 #endif
@@ -3530,7 +3530,6 @@ static struct platform_device *common_devices[] __initdata = {
 	&msm8960_rpm_device,
 	&msm8960_rpm_log_device,
 	&msm8960_rpm_stat_device,
-	//!&msm8960_rpm_master_stat_device,
 	&msm_device_tz_log,
 	&coresight_tpiu_device,
 	&coresight_etb_device,
@@ -3556,68 +3555,7 @@ static struct platform_device *common_devices[] __initdata = {
 #endif
 #endif
 };
-/*
-static struct platform_device *sim_devices[] __initdata = {
-	&msm8960_device_uart_gsbi5,
-	&msm8960_device_otg,
-	&msm8960_device_gadget_peripheral,
-	&msm_device_hsusb_host,
-	&msm_device_hsic_host,
-	&android_usb_device,
-	&msm_device_vidc,
-	&msm_bus_apps_fabric,
-	&msm_bus_sys_fabric,
-	&msm_bus_mm_fabric,
-	&msm_bus_sys_fpb,
-	&msm_bus_cpss_fpb,
-	&msm_pcm,
-	&msm_multi_ch_pcm,
-	&msm_pcm_routing,
-	&msm_cpudai0,
-	&msm_cpudai1,
-	&msm8960_cpudai_slimbus_2_rx,
-	&msm8960_cpudai_slimbus_2_tx,
-	&msm_cpudai_hdmi_rx,
-	&msm_cpudai_bt_rx,
-	&msm_cpudai_bt_tx,
-	&msm_cpudai_fm_rx,
-	&msm_cpudai_fm_tx,
-	&msm_cpudai_auxpcm_rx,
-	&msm_cpudai_auxpcm_tx,
-	&msm_cpu_fe,
-	&msm_stub_codec,
-	&msm_voice,
-	&msm_voip,
-	&msm_lpa_pcm,
-	&msm_compr_dsp,
-	&msm_cpudai_incall_music_rx,
-	&msm_cpudai_incall_record_rx,
-	&msm_cpudai_incall_record_tx,
 
-#if defined(CONFIG_CRYPTO_DEV_QCRYPTO) || \
-		defined(CONFIG_CRYPTO_DEV_QCRYPTO_MODULE)
-	&qcrypto_device,
-#endif
-
-#if defined(CONFIG_CRYPTO_DEV_QCEDEV) || \
-		defined(CONFIG_CRYPTO_DEV_QCEDEV_MODULE)
-	&qcedev_device,
-#endif
-};
-
-static struct platform_device *rumi3_devices[] __initdata = {
-	&msm8960_device_uart_gsbi5,
-	&msm_kgsl_3d0,
-	&msm_kgsl_2d0,
-	&msm_kgsl_2d1,
-#ifdef CONFIG_MSM_GEMINI
-	&msm8960_gemini_device,
-#endif
-#ifdef CONFIG_MSM_MERCURY
-	&msm8960_mercury_device,
-#endif
-};
-*/
 static struct platform_device *cdp_devices[] __initdata = {
 	&msm_8960_q6_lpass,
 	&msm_8960_q6_mss_fw,
@@ -3972,7 +3910,7 @@ static struct i2c_registry msm8960_i2c_devices[] __initdata = {
 	},
 #endif /* CONFIG_ISL9519_CHARGER */
 
-//++ p11309 - 2012.11.02 for remove cypress touch device 
+//++ p11309 - 2012.11.02 for remove cypress touch device
 #ifdef CONFIG_TOUCHSCREEN_CYTTSP_I2C
 	{
 		I2C_SURF | I2C_FFA | I2C_FLUID,
@@ -3983,7 +3921,7 @@ static struct i2c_registry msm8960_i2c_devices[] __initdata = {
 #endif
 //-- p11309
 
-//++ p11309 - 2012.11.02 for touch device atmel mXT224E 
+//++ p11309 - 2012.11.02 for touch device atmel mXT224E
 #ifdef CONFIG_TOUCHSCREEN_QT602240_MSM8960
 	{
 		I2C_SURF | I2C_FFA | I2C_FLUID,
@@ -4078,7 +4016,7 @@ static void __init register_i2c_devices(void)
 
 	/* Build the matching 'supported_machs' bitmask */
 #if (1)  // 20111103 jylee
-	if (machine_is_msm8960_svlte() || machine_is_msm8960_csfb() || 
+	if (machine_is_msm8960_svlte() || machine_is_msm8960_csfb() ||
 	    machine_is_msm8960_ef44s() || machine_is_msm8960_vegapvw() ||
 		machine_is_msm8960_cdp() || machine_is_msm8960_magnus()) {
 		mach_mask = I2C_SURF;
@@ -4152,39 +4090,6 @@ static void __init msm8960ab_update_krait_spm(void)
 		}
 	}
 }
-/* Remove 'cuz it's removed in later tag
-static void __init msm8960_rumi3_init(void)
-{
-	msm_tsens_early_init(&msm_tsens_pdata);
-	msm_thermal_init(&msm_thermal_pdata);
-	BUG_ON(msm_rpm_init(&msm8960_rpm_data));
-	BUG_ON(msm_rpmrs_levels_init(&msm_rpmrs_data));
-	regulator_suppress_info_printing();
-	platform_device_register(&msm8960_device_rpm_regulator);
-	msm8960_init_gpiomux();
-	msm8960_init_pmic();
-#ifndef CONFIG_PANTECH_CAMERA	
-	msm8960_device_qup_spi_gsbi1.dev.platform_data =
-				&msm8960_qup_spi_gsbi1_pdata;
-	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
-#endif	
-	msm8960_i2c_init();
-	msm_spm_init(msm_spm_data, ARRAY_SIZE(msm_spm_data));
-	msm_spm_l2_init(msm_spm_l2_data);
-	platform_add_devices(common_devices, ARRAY_SIZE(common_devices));
-	msm8960_pm8921_gpio_mpp_init();
-	platform_add_devices(rumi3_devices, ARRAY_SIZE(rumi3_devices));
-	msm8960_init_mmc();
-	register_i2c_devices();
-
-	// below added from previous branch
-	msm8960_init_fb();
-	slim_register_board_info(msm_slim_devices,
-		ARRAY_SIZE(msm_slim_devices));
-	BUG_ON(msm_pm_boot_init(&msm_pm_boot_pdata));
-	msm_pm_init_sleep_status_data(&msm_pm_slp_sts_data);
-}
-*/
 
 static void __init msm8960ab_update_retention_spm(void)
 {
